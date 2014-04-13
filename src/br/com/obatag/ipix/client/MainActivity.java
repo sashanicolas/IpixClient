@@ -1,8 +1,10 @@
-package com.example.first;
+package br.com.obatag.ipix.client;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import com.example.first.R;
 
 import android.app.Activity;
 import android.content.Intent;
