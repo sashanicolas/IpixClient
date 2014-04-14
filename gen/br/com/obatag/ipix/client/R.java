@@ -5,7 +5,7 @@
  * should not be modified by hand.
  */
 
-package com.example.first;
+package br.com.obatag.ipix.client;
 
 public final class R {
     public static final class attr {

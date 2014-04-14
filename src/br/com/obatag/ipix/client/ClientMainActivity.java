@@ -1,6 +1,7 @@
 package br.com.obatag.ipix.client;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.example.first.R;
+import br.com.obatag.ipix.client.R;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -43,11 +44,10 @@ public class ClientMainActivity extends Activity {
 
 	private Socket socket;
 	private static final int SERVERPORT = 6000;
-	private static final String SERVER_IP = "192.168.0.16";
-	
-	public OutputStream outputStream;
+	private static final String SERVER_IP = "192.168.107.121";
 
-	
+	public BufferedOutputStream outputStream;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -56,7 +56,7 @@ public class ClientMainActivity extends Activity {
 		imgPreview = (ImageView) findViewById(R.id.imgPreview);
 		btnCapturePicture = (Button) findViewById(R.id.btnCapturePicture);
 		btnSendPicture = (Button) findViewById(R.id.btnSendPicture);
-		
+
 		btnCapturePicture.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -73,7 +73,7 @@ public class ClientMainActivity extends Activity {
 				}
 			}
 		});
-		
+
 		new Thread(new ClientThread()).start();
 	}
 
@@ -175,7 +175,7 @@ public class ClientMainActivity extends Activity {
 		// get the file url
 		fileUri = savedInstanceState.getParcelable("file_uri");
 	}
-	
+
 	class ClientThread implements Runnable {
 		@Override
 		public void run() {
@@ -183,28 +183,48 @@ public class ClientMainActivity extends Activity {
 				InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
 
 				socket = new Socket(serverAddr, SERVERPORT);
-				
+
 			} catch (UnknownHostException e1) {
 				e1.printStackTrace();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
 		}
-	}//client thread
-	
-	public void sendFile() throws IOException{
-	    socket = new Socket(InetAddress.getByName(SERVER_IP), SERVERPORT);
-	    outputStream = socket.getOutputStream();
-	    
-	    File f = new File("/storage/emulated/0/Pictures/MyCameraApp/img.jpg");
-	    
-	    byte [] buffer = new byte[(int)f.length()];
-	    
-	    FileInputStream fis = new FileInputStream(f);
-	    BufferedInputStream bis = new BufferedInputStream(fis);
-	    bis.read(buffer, 0, buffer.length);
-	    
-	    outputStream.write(buffer,0,buffer.length);
-	    outputStream.flush();
+	}// client thread
+
+	public void sendFile() throws IOException {
+		// socket = new Socket(InetAddress.getByName(SERVER_IP), SERVERPORT);
+
+		File f = new File("/storage/emulated/0/Pictures/MyCameraApp/img.jpg");
+
+		if (!f.exists()) {
+			Log.w("myApp", "Arquivo nao encotrado");
+			return;
+		}
+		long length = f.length();
+
+		if (length > Integer.MAX_VALUE) {
+			Log.w("myApp", "Arquivo muito grande");
+			return;
+		}
+
+		byte[] buffer = new byte[(int) f.length()];
+
+		FileInputStream fis = new FileInputStream(f);
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		outputStream = new BufferedOutputStream(socket.getOutputStream());
+
+		int count;
+		
+		while((count = bis.read(buffer))>0){
+			outputStream.write(buffer,0,count);
+		}
+		
+		outputStream.flush();
+		outputStream.close();
+		fis.close();
+		bis.close();
+		
+		socket.close();
 	}
 }
